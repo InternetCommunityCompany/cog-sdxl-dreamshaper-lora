@@ -71,6 +71,16 @@ class Predictor(BasePredictor):
             seed = int.from_bytes(os.urandom(2), "big")
         print(f"Using seed: {seed}")
 
+        # check if we have the lora weights downloaded
+        if not os.path.exists("./niji-lora"):
+            print("Downloading LoRA weights...")
+            # download lora with wget from https://f005.backblazeb2.com/file/sd-loras/1990-2.safetensors
+            os.system("wget https://f005.backblazeb2.com/file/sd-loras/1990-2.safetensors -O ./niji-lora")
+            # rename the file to pytorch_lora_weights.safetensors
+            os.system("mv ./niji-lora ./pytorch_lora_weights.safetensors")
+
+        self.pipe.load_lora_weights("./niji-lora", weight_name="pytorch_lora_weights.safetensors")
+
         self.pipe.scheduler = DEISMultistepScheduler.from_config(self.pipe.scheduler.config)
         generator = torch.Generator("cuda").manual_seed(seed)
         output = self.pipe(
