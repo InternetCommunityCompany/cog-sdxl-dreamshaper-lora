@@ -6,6 +6,7 @@ from cog import BasePredictor, Input, Path
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker,
 )
+import subprocess
 
 # MODEL_ID refers to a diffusers-compatible model on HuggingFace
 # e.g. prompthero/openjourney-v2, wavymulder/Analog-Diffusion, etc
@@ -72,13 +73,18 @@ class Predictor(BasePredictor):
         print(f"Using seed: {seed}")
 
         # check if we have the lora weights downloaded
-        if not os.path.exists("./niji-lora"):
+        folder_path = "niji-lora"
+        file_path = os.path.join(folder_path, "pytorch_lora_weights.safetensors")
+        if not os.path.exists(file_path):
             print("Downloading LoRA weights...")
             # download lora with wget from https://f005.backblazeb2.com/file/sd-loras/1990-2.safetensors
-            os.system("wget https://f005.backblazeb2.com/file/sd-loras/1990-2.safetensors -O ./niji-lora")
-            # rename the file to pytorch_lora_weights.safetensors
-            os.system("mv ./niji-lora ./pytorch_lora_weights.safetensors")
+            os.makedirs(folder_path, exist_ok=True)
+            download_url = "https://f005.backblazeb2.com/file/sd-loras/1990-2.safetensors"
+            subprocess.run(["wget", "-O", file_path, download_url])
 
+            # rename the file to pytorch_lora_weights.safetensors
+            # os.system("mv ./niji-lora ./pytorch_lora_weights.safetensors")
+            
         self.pipe.load_lora_weights("./niji-lora", weight_name="pytorch_lora_weights.safetensors")
 
         self.pipe.scheduler = DEISMultistepScheduler.from_config(self.pipe.scheduler.config)
